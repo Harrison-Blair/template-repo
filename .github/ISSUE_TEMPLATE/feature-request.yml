@@ -1,0 +1,56 @@
+name: Feature
+description: Adding or chaning functionality of the program.
+title: "[BUG]: "
+labels: ["feature"]
+assignees:
+  - Harrison-Blair
+type: feature
+body:
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      placeholder: |
+        As a <type of user>,
+        I would like <feature>,
+        because it would <reasoning>.
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story Points
+      description: How much effort/work will this take?
+      options:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 5
+        - 8
+        - 13
+        - not sure
+  - type: textarea
+    id: functional-requirements
+    attributes:
+      label: Functional Requirements
+      description: **What**, not *how*
+  - type: textarea
+    id: acceptence-criteria
+    attributes:
+      label: Acceptence Criteria
+      description: What functionality will change for the user after this story?
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Extra Info
+      description: anything that might help implimentation efforts
+      placeholder: |
+        Documentation
+          - Link1
+          - Link2
+
+        Wiki
+          - Link1
+
+        Reference
+          - Link1
+          - Link2
