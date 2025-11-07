@@ -1,0 +1,55 @@
+name: Bug Report
+description: Report unintended or erronious functionality
+title: "[BUG] :"
+labels: ["bug"]
+assignees:
+  - Harrison-Blair
+body:
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Description
+      description: Briefly describe what is happening, and what should happen
+      placeholder: |
+        When I toggle light/dark mode, different elements on the page transition at different speeds. 
+        They should all transform uniformly.  
+    validations:
+      required: true
+  - type: dropdown
+    id: criticality
+    attributes:
+      label: Criticality
+      description: How important is this bugfix?
+      options:
+        - very low
+        - low
+        - medium
+        - high
+        - very high
+        - unknown
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction Steps
+      placeholder: | 
+        1. Navigate to website
+        2. Click the toggle theme icon on the nav bar
+        3. Observe theme change
+    validations:
+      required: true
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Extra Info
+      description: anything that might help triage efforts
+      placeholder: |
+        Documentation
+          - Link1
+          - Link2
+
+        Wiki
+          - Link1
+
+        Reference
+          - Link1
+          - Link2
