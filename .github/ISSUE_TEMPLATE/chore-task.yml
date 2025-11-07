@@ -1,0 +1,48 @@
+name: Chore
+description: Not quite a feature, not research, not documentation
+title: "[CHORE]: "
+labels: ["chore"]
+assignees:
+  - Harrison Blair
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the task that needs to be done and why
+      placeholder: |
+        As a developer,
+        I would like <thing>,
+        because <reason>
+    validations:
+      required: true
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story Points
+      description: How much effort/work will this take?
+      options:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 5
+        - 8
+        - 13
+        - not sure
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Extra Info
+      description: anything that might help implementation efforts
+      placeholder: |
+        Documentation
+          - Link1
+          - Link2
+
+        Wiki
+          - Link1
+
+        Reference
+          - Link1
+          - Link2
