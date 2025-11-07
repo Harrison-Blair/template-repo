@@ -1,10 +1,9 @@
 name: Feature
-description: Adding or chaning functionality of the program.
-title: "[BUG]: "
+description: Adding or changing functionality of the program.
+title: "[FEATURE]: "
 labels: ["feature"]
 assignees:
   - Harrison-Blair
-type: feature
 body:
   - type: textarea
     id: user-story
@@ -34,15 +33,15 @@ body:
       label: Functional Requirements
       description: **What**, not *how*
   - type: textarea
-    id: acceptence-criteria
+    id: acceptance-criteria
     attributes:
-      label: Acceptence Criteria
+      label: Acceptance Criteria
       description: What functionality will change for the user after this story?
   - type: textarea
     id: extra-info
     attributes:
       label: Extra Info
-      description: anything that might help implimentation efforts
+      description: anything that might help implementation efforts
       placeholder: |
         Documentation
           - Link1
