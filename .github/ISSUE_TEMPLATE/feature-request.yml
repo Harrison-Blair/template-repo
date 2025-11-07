@@ -31,7 +31,7 @@ body:
     id: functional-requirements
     attributes:
       label: Functional Requirements
-      description: **What**, not *how*
+      description: What, not how
   - type: textarea
     id: acceptance-criteria
     attributes:
