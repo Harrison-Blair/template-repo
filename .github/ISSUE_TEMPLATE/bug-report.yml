@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report unintended or erronious functionality
-title: "[BUG] :"
+title: "[BUG]: "
 labels: ["bug"]
 assignees:
   - Harrison-Blair
