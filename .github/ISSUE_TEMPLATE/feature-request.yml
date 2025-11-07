@@ -13,6 +13,8 @@ body:
         As a <type of user>,
         I would like <feature>,
         because it would <reasoning>.
+    validations:
+        required: true
   - type: dropdown
     id: story-points
     attributes:
@@ -32,11 +34,15 @@ body:
     attributes:
       label: Functional Requirements
       description: What, not how
+    validations:
+      required: true
   - type: textarea
     id: acceptance-criteria
     attributes:
       label: Acceptance Criteria
       description: What functionality will change for the user after this story?
+    validations:
+      required: true
   - type: textarea
     id: extra-info
     attributes:
