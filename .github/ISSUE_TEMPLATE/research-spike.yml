@@ -1,0 +1,42 @@
+name: Research Spike
+description: A research request/story
+title: "[SPIKE]: "
+labels: ["spike"]
+assignees:
+  - Harrison-Blair
+body:
+  - type: input
+    id: research-topic
+    attributes:
+      title: Research Topic
+      description: What needs to be looked into?
+      placeholder: |
+        Payment processor integration
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      title: Rationale
+      placeholder: |
+        In order for the website to process transations, it will need to integrate to a payments gateway.
+        Currently thinking Stripe due to widespread use and good API. 
+        Would be interested in looking at using crypto with Coinbase's x402 as well.
+    validation:
+      required: true
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Extra Info
+      description: anything that might help research efforts
+      placeholder: |
+        Documentation
+          - Link1
+          - Link2
+
+        Wiki
+          - Link1
+
+        Reference
+          - Link1
+          - Link
