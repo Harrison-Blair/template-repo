@@ -8,7 +8,7 @@ body:
   - type: input
     id: research-topic
     attributes:
-      title: Research Topic
+      label: Research Topic
       description: What needs to be looked into?
       placeholder: |
         Payment processor integration
@@ -17,12 +17,12 @@ body:
   - type: textarea
     id: rationale
     attributes:
-      title: Rationale
+      label: Rationale
       placeholder: |
         In order for the website to process transations, it will need to integrate to a payments gateway.
         Currently thinking Stripe due to widespread use and good API. 
         Would be interested in looking at using crypto with Coinbase's x402 as well.
-    validation:
+    validations:
       required: true
   - type: textarea
     id: extra-info
