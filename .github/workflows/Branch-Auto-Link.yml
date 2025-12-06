@@ -1,0 +1,92 @@
+name: Branch Auto-Link to Issue
+
+on:
+  create:
+
+jobs:
+  link-issue:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'branch'
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Extract WI Number from Branch Name
+        id: extract
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "Branch name: $BRANCH_NAME"
+
+          # Extract WI number from branch name (e.g., feature/WI-123-Add-login -> 123)
+          if [[ $BRANCH_NAME =~ ^([^/]+)/([A-Za-z]+)-([0-9]+)-(.+)$ ]]; then
+            WI_NUMBER="${BASH_REMATCH[3]}"
+            echo "wi_number=$WI_NUMBER" >> $GITHUB_OUTPUT
+            echo "Found WI number: $WI_NUMBER"
+          else
+            echo "Branch name does not match expected format (type/WI-#-Title)"
+            echo "wi_number=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Search for Corresponding Issue
+        id: search_issue
+        if: steps.extract.outputs.wi_number != ''
+        run: |
+          WI_NUMBER="${{ steps.extract.outputs.wi_number }}"
+
+          # Check if an issue with this number exists
+          ISSUE_EXISTS=$(gh issue view $WI_NUMBER \
+            --repo "${{ github.repository }}" \
+            --json number \
+            --jq '.number // empty' 2>/dev/null)
+
+          if [ -z "$ISSUE_EXISTS" ]; then
+            echo "No issue found with number #$WI_NUMBER"
+            echo "issue_number=" >> $GITHUB_OUTPUT
+          else
+            echo "Found issue #$WI_NUMBER"
+            echo "issue_number=$WI_NUMBER" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if Branch Already Linked
+        id: check_link
+        if: steps.search_issue.outputs.issue_number != ''
+        run: |
+          ISSUE_NUMBER="${{ steps.search_issue.outputs.issue_number }}"
+          BRANCH_NAME="${{ github.ref_name }}"
+
+          # Check if we already commented about this branch
+          LINKED=$(gh issue view $ISSUE_NUMBER \
+            --repo "${{ github.repository }}" \
+            --json comments \
+            --jq '.comments[].body | select(contains("Branch: '$BRANCH_NAME'")) // empty' | head -1)
+
+          if [ -n "$LINKED" ]; then
+            echo "Branch already noted on issue #$ISSUE_NUMBER"
+            echo "already_linked=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch not yet noted"
+            echo "already_linked=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add Branch Reference to Issue
+        if: steps.check_link.outputs.already_linked == 'false'
+        run: |
+          ISSUE_NUMBER="${{ steps.search_issue.outputs.issue_number }}"
+          BRANCH_NAME="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          BRANCH_URL="${{ github.server_url }}/$REPO/tree/$BRANCH_NAME"
+
+          # Add a comment referencing the branch
+          # The actual link in the sidebar will appear when a PR is created or commits reference the issue
+          gh issue comment $ISSUE_NUMBER \
+            --repo "$REPO" \
+            --body "Development Branch: [$BRANCH_NAME]($BRANCH_URL)"
+
+          echo "✓ Added branch reference to issue #$ISSUE_NUMBER"
+          echo "Note: Branch will appear in development sidebar once a PR is created or commits reference this issue"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

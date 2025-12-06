@@ -1,0 +1,73 @@
+name: Auto-Tag PR from Branch Name
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  tag-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Check if PR Already Has Type Label
+        id: check_labels
+        run: |
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+
+          echo "Current PR labels: $PR_LABELS"
+
+          # Check if PR already has one of the type labels
+          if [[ "$PR_LABELS" =~ (feature|chore|bug|spike) ]]; then
+            echo "has_type_label=true" >> $GITHUB_OUTPUT
+            echo "✓ PR already has a type label"
+          else
+            echo "has_type_label=false" >> $GITHUB_OUTPUT
+            echo "✗ PR does not have a type label"
+          fi
+
+      - name: Extract Type from Branch Name
+        id: extract
+        if: steps.check_labels.outputs.has_type_label == 'false'
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Branch name: $BRANCH_NAME"
+
+          # Extract type from branch name (e.g., feature/WI-123-Add-login -> feature)
+          if [[ $BRANCH_NAME =~ ^([^/]+)/([A-Za-z]+)-([0-9]+)-(.+)$ ]]; then
+            TYPE="${BASH_REMATCH[1]}"
+            TYPE_LOWER="${TYPE,,}"
+            
+            # Validate type is one of the allowed labels
+            if [[ "$TYPE_LOWER" =~ ^(feature|chore|bug|spike)$ ]]; then
+              echo "branch_type=$TYPE_LOWER" >> $GITHUB_OUTPUT
+              echo "Found valid type: $TYPE_LOWER"
+            else
+              echo "branch_type=" >> $GITHUB_OUTPUT
+              echo "✗ Branch type '$TYPE_LOWER' is not a valid label (feature, chore, bug, spike)"
+            fi
+          else
+            echo "Branch name does not match expected format (type/WI-#-Title)"
+            echo "branch_type=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add Label to PR
+        if: steps.check_labels.outputs.has_type_label == 'false' && steps.extract.outputs.branch_type != ''
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          LABEL="${{ steps.extract.outputs.branch_type }}"
+
+          gh pr edit $PR_NUMBER \
+            --repo "${{ github.repository }}" \
+            --add-label "$LABEL"
+
+          echo "✓ Added label '$LABEL' to PR #$PR_NUMBER"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: PR Already Has Type Label
+        if: steps.check_labels.outputs.has_type_label == 'true'
+        run: |
+          echo "✓ PR already has a type label"
+          echo "No changes needed"

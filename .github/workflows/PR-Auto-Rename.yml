@@ -1,0 +1,77 @@
+name: Auto-Rename PR from Branch Name
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  rename-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Check PR Title Format
+        id: check_title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          echo "Current PR title: $PR_TITLE"
+
+          # Check if title matches the expected format: TYPE | WI # | Title (with spaces instead of dashes)
+          if [[ "$PR_TITLE" =~ ^[A-Z]+\ \|\ [A-Z]+\ [0-9]+\ \|\ [^|]+$ ]]; then
+            echo "title_valid=true" >> $GITHUB_OUTPUT
+            echo "✓ PR title is already in correct format"
+          else
+            echo "title_valid=false" >> $GITHUB_OUTPUT
+            echo "✗ PR title does not match expected format: TYPE | WI # | Title"
+            echo "  Current: $PR_TITLE"
+          fi
+
+      - name: Extract and Format PR Title
+        id: format_title
+        if: steps.check_title.outputs.title_valid == 'false'
+        run: |
+          # Get the branch name
+          BRANCH_NAME="${{ github.head_ref }}"
+
+          echo "Processing branch: $BRANCH_NAME"
+
+          # Extract type, WI number, and title using regex
+          # Expected format: type/WI-#-Title
+          if [[ $BRANCH_NAME =~ ^([^/]+)/([A-Za-z]+-[0-9]+)-(.+)$ ]]; then
+            TYPE="${BASH_REMATCH[1]}"
+            WI_NUMBER="${BASH_REMATCH[2]}"
+            TITLE="${BASH_REMATCH[3]}"
+            
+            # Replace dashes with spaces in WI number (e.g., WI-123 -> WI 123)
+            WI_NUMBER="${WI_NUMBER//-/ }"
+            
+            # Replace dashes with spaces in the title
+            TITLE="${TITLE//-/ }"
+            
+            # Format: TYPE | WI # | Title
+            NEW_PR_TITLE="${TYPE^^} | ${WI_NUMBER} | ${TITLE}"
+            
+            echo "new_pr_title=$NEW_PR_TITLE" >> $GITHUB_OUTPUT
+            echo "✓ Successfully formatted PR title: $NEW_PR_TITLE"
+          else
+            echo "✗ Branch name does not match expected format: $BRANCH_NAME"
+            echo "Expected format: type/WI-#-Title (e.g., feature/WI-123-Add-login)"
+            exit 1
+          fi
+
+      - name: Update PR Title
+        if: steps.check_title.outputs.title_valid == 'false' && steps.format_title.outputs.new_pr_title != ''
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo "${{ github.repository }}" \
+            --title "${{ steps.format_title.outputs.new_pr_title }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Title Already Correct
+        if: steps.check_title.outputs.title_valid == 'true'
+        run: |
+          echo "✓ PR title is already in the correct format"
+          echo "No changes needed"

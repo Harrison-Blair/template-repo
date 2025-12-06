@@ -1,0 +1,79 @@
+name: Auto-Link PR to Issue
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  link-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Extract WI Number from Branch Name
+        id: extract
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Branch name: $BRANCH_NAME"
+
+          # Extract WI number from branch name (e.g., feature/WI-123-Add-login -> 123)
+          if [[ $BRANCH_NAME =~ ^([^/]+)/([A-Za-z]+)-([0-9]+)-(.+)$ ]]; then
+            WI_NUMBER="${BASH_REMATCH[3]}"
+            echo "wi_number=$WI_NUMBER" >> $GITHUB_OUTPUT
+            echo "Found WI number: $WI_NUMBER"
+          else
+            echo "Branch name does not match expected format (type/WI-#-Title)"
+            echo "wi_number=" >> $GITHUB_OUTPUT
+          fi
+      - name: Check PR Body for Closing Syntax
+        id: check_body
+        if: steps.extract.outputs.wi_number != ''
+        run: |
+          WI_NUMBER="${{ steps.extract.outputs.wi_number }}"
+
+          # Write PR body to temp file to handle special characters
+          cat > /tmp/pr_body_check.txt << 'EOF'
+          ${{ github.event.pull_request.body }}
+          EOF
+
+          echo "Current PR body:"
+          cat /tmp/pr_body_check.txt
+
+          # Check if body contains closing syntax for this issue (closes #N, fixes #N, resolves #N)
+          if grep -iE "(closes|fixes|resolves)[[:space:]]+#${WI_NUMBER}" /tmp/pr_body_check.txt > /dev/null; then
+            echo "body_has_closing=true" >> $GITHUB_OUTPUT
+            echo "✓ PR body already contains closing syntax for issue #$WI_NUMBER"
+          else
+            echo "body_has_closing=false" >> $GITHUB_OUTPUT
+            echo "✗ PR body does not contain closing syntax for issue #$WI_NUMBER"
+          fi
+      - name: Add Closing Syntax to PR Body
+        if: steps.check_body.outputs.body_has_closing == 'false'
+        run: |
+          WI_NUMBER="${{ steps.extract.outputs.wi_number }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Write PR body and closing syntax to temp file to preserve all special characters
+          cat > /tmp/pr_body.txt << 'EOF'
+          ${{ github.event.pull_request.body }}
+          EOF
+
+          # Append closing syntax
+          echo "" >> /tmp/pr_body.txt
+          echo "Closes #${WI_NUMBER}" >> /tmp/pr_body.txt
+
+          # Update the PR body from file
+          gh pr edit $PR_NUMBER \
+            --repo "${{ github.repository }}" \
+            --body-file /tmp/pr_body.txt
+
+          echo "✓ Added 'Closes #$WI_NUMBER' to PR body"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Body Already Has Closing Syntax
+        if: steps.check_body.outputs.body_has_closing == 'true'
+        run: |
+          echo "✓ PR body already contains closing syntax"
+          echo "No changes needed"
