@@ -1,0 +1,76 @@
+name: Issue triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply or remove needs-triage label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Scoped to issues filed through .github/ISSUE_TEMPLATE/ forms.
+            // The scoped label being present is the signal that the body
+            // contains the "### Story points" and "### Priority" sections
+            // parsed below — field-label changes in the template YAML must
+            // be reflected here.
+            const SCOPED_LABELS = ['Feature', 'Chore', 'Bug', 'Research'];
+            const TRIAGE_LABEL = 'needs-triage';
+            const NO_RESPONSE = '_No response_';
+
+            const issue = context.payload.issue;
+            const issueLabels = issue.labels.map(l => l.name);
+
+            if (!SCOPED_LABELS.some(l => issueLabels.includes(l))) {
+              core.info(`Issue #${issue.number} has no scoped template label — skipping.`);
+              return;
+            }
+
+            function getSection(body, label) {
+              const re = new RegExp(
+                `###\\s+${label}\\s*\\n+([\\s\\S]*?)(?=\\n###\\s|$)`,
+                'i'
+              );
+              const m = body.match(re);
+              return m ? m[1].trim() : null;
+            }
+
+            const body = (issue.body || '').replace(/\r\n/g, '\n');
+            const storyPoints = getSection(body, 'Story points');
+            const priority = getSection(body, 'Priority');
+
+            const storyMissing = !storyPoints || storyPoints === NO_RESPONSE || storyPoints === '?';
+            const priorityMissing = !priority || priority === NO_RESPONSE;
+            const needsTriage = storyMissing || priorityMissing;
+
+            const hasTriage = issueLabels.includes(TRIAGE_LABEL);
+
+            core.info(`story points: ${JSON.stringify(storyPoints)} (missing=${storyMissing})`);
+            core.info(`priority: ${JSON.stringify(priority)} (missing=${priorityMissing})`);
+            core.info(`needsTriage=${needsTriage}, hasTriage=${hasTriage}`);
+
+            if (needsTriage && !hasTriage) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: [TRIAGE_LABEL],
+              });
+              core.info(`Added ${TRIAGE_LABEL}`);
+            } else if (!needsTriage && hasTriage) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name: TRIAGE_LABEL,
+              });
+              core.info(`Removed ${TRIAGE_LABEL}`);
+            } else {
+              core.info('No label change needed.');
+            }

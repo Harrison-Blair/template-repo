@@ -1,0 +1,94 @@
+name: Chore
+description: Refactor, configuration, restructuring, or tooling work that doesn't change behavior.
+title: "[CHORE] "
+labels:
+  - Chore
+assignees:
+  - Harrison-Blair
+body:
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story points
+      description: Fibonacci estimate. Leave blank or pick `?` if unsure.
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - "?"
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - CRITICAL
+        - HIGH
+        - MEDIUM
+        - LOW
+        - NONVITAL
+    validations:
+      required: false
+  - type: dropdown
+    id: chore-type
+    attributes:
+      label: Chore type
+      description: Category of work.
+      options:
+        - Refactor
+        - Configuration
+        - Restructure
+        - Tooling
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: task-description
+    attributes:
+      label: Task description
+      description: What needs to be done.
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why do this now? Tech debt, unblocks future work, compliance, cleanup.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Explicit boundary — chores are prone to creep, so keep this tight.
+      value: |
+        **In scope:**
+        -
+
+        **Out of scope:**
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of done
+      description: First items enforce behavior preservation. Add task-specific criteria below.
+      value: |
+        - [ ] Behavior is unchanged after this task
+        - [ ] Existing tests still pass
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: related-documentation
+    attributes:
+      label: Related documentation
+      description: Links to docs, issues, PRs, or other context.
+    validations:
+      required: false

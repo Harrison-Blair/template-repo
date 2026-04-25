@@ -1,0 +1,159 @@
+name: PR title and tag
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+  issues: read
+
+jobs:
+  pr-title-and-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute and apply PR title prefix and labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Sets the PR title prefix and applies matching labels based on
+            // linked-issue types. Coupled to the ISSUE_TEMPLATE labels —
+            // renaming any of Feature/Chore/Bug/Research requires updating
+            // TEMPLATE_TYPES.
+            const TEMPLATE_TYPES = ['Feature', 'Chore', 'Bug', 'Research'];
+            const DEFAULT_PREFIX = 'PR';
+            const KNOWN_PREFIXES = new Set([
+              DEFAULT_PREFIX,
+              ...TEMPLATE_TYPES.map(t => t.toUpperCase()),
+            ]);
+
+            // GitHub auto-close keywords + -ing variants. Same-repo only —
+            // cross-repo refs like `Closes owner/repo#N` are intentionally
+            // not matched.
+            const CLOSING_RE = /\b(?:close[sd]?|closing|fix(?:e[sd])?|fixing|resolve[sd]?|resolving)\s+#(\d+)/gi;
+            const REFS_RE = /\b(?:refs?|references?)\s+#(\d+)/gi;
+
+            const pr = context.payload.pull_request;
+            const body = (pr.body || '').replace(/\r\n/g, '\n');
+            const title = pr.title || '';
+
+            function findRefs(text, regex) {
+              const nums = [];
+              regex.lastIndex = 0;
+              let m;
+              while ((m = regex.exec(text)) !== null) {
+                nums.push(parseInt(m[1], 10));
+              }
+              return nums;
+            }
+
+            // Closing refs take priority; fall back to Refs/Ref/References.
+            // Bare `#N` is not treated as a link (deliberate — too noisy).
+            let issueNums = findRefs(body, CLOSING_RE);
+            if (issueNums.length === 0) {
+              issueNums = findRefs(body, REFS_RE);
+            }
+            issueNums = [...new Set(issueNums)];
+
+            // Collect template types in order of appearance, one per issue.
+            // Preserve the issue label's original case (e.g. 'Feature') —
+            // uppercased only when formatted as a title prefix.
+            const types = [];
+            const seenTypes = new Set();
+            for (const n of issueNums) {
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: n,
+                });
+                for (const label of issue.labels) {
+                  const name = typeof label === 'string' ? label : label.name;
+                  if (TEMPLATE_TYPES.includes(name)) {
+                    if (!seenTypes.has(name)) {
+                      types.push(name);
+                      seenTypes.add(name);
+                    }
+                    break;
+                  }
+                }
+              } catch (e) {
+                core.info(`Could not fetch issue #${n}: ${e.message}`);
+              }
+            }
+
+            // Normalize known prefixes to ALL CAPS; preserve case for unknowns.
+            function normalizePrefix(p) {
+              const upper = p.toUpperCase();
+              return KNOWN_PREFIXES.has(upper) ? upper : p;
+            }
+
+            // Extract leading bracketed prefixes from the title.
+            const titleMatch = title.match(/^((?:\[[^\]]+\])+)\s*(.*)$/);
+            let existing = [];
+            let rest = title;
+            if (titleMatch) {
+              existing = [...titleMatch[1].matchAll(/\[([^\]]+)\]/g)]
+                .map(m => normalizePrefix(m[1]));
+              rest = titleMatch[2];
+            }
+
+            // Dedupe; then strip [PR] — it's a default, never a user assertion.
+            const seenExisting = new Set();
+            existing = existing.filter(p => {
+              if (seenExisting.has(p)) return false;
+              seenExisting.add(p);
+              return true;
+            });
+            existing = existing.filter(p => p !== DEFAULT_PREFIX);
+
+            // Linked types are authoritative; otherwise default to [PR].
+            const upperTypes = types.map(t => t.toUpperCase());
+            const authoritative = upperTypes.length > 0 ? upperTypes : [DEFAULT_PREFIX];
+            const authoritativeSet = new Set(authoritative);
+
+            // Preserve user brackets that aren't already in the authoritative set.
+            // Known-type prefixes like [FEATURE] that don't match a linked issue
+            // are treated as append-only (same as [WIP]).
+            const preserved = existing.filter(p => !authoritativeSet.has(p));
+
+            const finalPrefixes = [...authoritative, ...preserved];
+            const prefixStr = finalPrefixes.map(p => `[${p}]`).join('');
+            const newTitle = rest ? `${prefixStr} ${rest}` : prefixStr;
+
+            core.info(`Linked issue numbers: ${issueNums.join(', ') || '(none)'}`);
+            core.info(`Template types: ${types.join(', ') || '(none)'}`);
+            core.info(`Existing brackets (deduped, PR stripped): ${existing.join(', ') || '(none)'}`);
+            core.info(`Final prefix sequence: ${finalPrefixes.join(', ')}`);
+            core.info(`Title: "${title}" -> "${newTitle}"`);
+
+            if (newTitle !== title) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title: newTitle,
+              });
+              core.info('Title updated.');
+            } else {
+              core.info('Title unchanged — no title update needed.');
+            }
+
+            // Apply linked-issue template-type labels. Append-only, mirroring
+            // the title logic which preserves user-added bracketed prefixes —
+            // we never strip TEMPLATE_TYPES labels, so a re-link from Feature
+            // to Bug ends up tagged with both, just like the title ends up
+            // with [BUG][FEATURE].
+            const currentLabels = new Set((pr.labels || []).map(l => l.name));
+            const labelsToAdd = types.filter(t => !currentLabels.has(t));
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labelsToAdd,
+              });
+              core.info(`Labels added: ${labelsToAdd.join(', ')}`);
+            } else {
+              core.info('No labels to add.');
+            }

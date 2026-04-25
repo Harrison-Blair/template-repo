@@ -1,0 +1,125 @@
+name: Bug
+description: Report a defect — something is broken or behaving unexpectedly.
+title: "[BUG] "
+labels:
+  - Bug
+assignees:
+  - Harrison-Blair
+body:
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story points
+      description: Fibonacci estimate. Leave blank or pick `?` if unsure.
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - "?"
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - CRITICAL
+        - HIGH
+        - MEDIUM
+        - LOW
+        - NONVITAL
+    validations:
+      required: false
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the bug. Screenshots can be dragged into any textarea.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps to reproduce. Number each step.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened. Include error messages, screenshots, or console output if available.
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Firefox
+        - Chrome (Chromium)
+        - Safari
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      options:
+        - Desktop
+        - Mobile
+        - Tablet
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL where bug occurred
+      description: Full URL, or `N/A` if not applicable.
+    validations:
+      required: true
+  - type: dropdown
+    id: user-role
+    attributes:
+      label: User role
+      options:
+        - Guest
+        - Customer
+        - Vendor
+        - Admin
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production
+        - Staging
+        - Local
+    validations:
+      required: true
+  - type: textarea
+    id: related-documentation
+    attributes:
+      label: Related documentation
+      description: Links to docs, issues, PRs, or other context.
+    validations:
+      required: false

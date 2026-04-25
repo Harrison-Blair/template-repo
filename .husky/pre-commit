@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Husky's wrapper invokes hooks via `sh -e` regardless of this shebang, so
+# re-exec under bash on systems where /bin/sh is dash (Debian/Ubuntu).
+if [ -z "${BASH_VERSION:-}" ]; then
+  exec bash "$0" "$@"
+fi
+set -eo pipefail
+
+# Auto-format staged files with ruff (Python) and eslint (JS/TS).
+# Files with both staged and unstaged changes abort the commit — stage everything
+# or stash the unstaged hunks before retrying. This sidesteps the stash-and-restore
+# dance that lint-staged does; it trades partial-staging support for simplicity.
+
+mapfile -d '' staged < <(git diff --cached --name-only --diff-filter=ACM -z)
+[ "${#staged[@]}" -eq 0 ] && exit 0
+
+mapfile -d '' dirty < <(git diff --name-only --diff-filter=ACM -z)
+
+is_dirty() {
+  local needle=$1
+  local f
+  for f in ${dirty[@]+"${dirty[@]}"}; do
+    [ "$needle" = "$f" ] && return 0
+  done
+  return 1
+}
+
+py_files=()
+js_files=()
+conflicts=()
+
+for f in "${staged[@]}"; do
+  matched=0
+  if [[ "$f" == python/*.py ]]; then
+    py_files+=("$f")
+    matched=1
+  elif [[ "$f" == *.js || "$f" == *.jsx || "$f" == *.mjs || "$f" == *.cjs || "$f" == *.ts || "$f" == *.tsx ]]; then
+    js_files+=("$f")
+    matched=1
+  fi
+  if [ "$matched" = 1 ] && is_dirty "$f"; then
+    conflicts+=("$f")
+  fi
+done
+
+if [ "${#conflicts[@]}" -gt 0 ]; then
+  echo "pre-commit: these staged files also have unstaged changes:" >&2
+  printf '  %s\n' "${conflicts[@]}" >&2
+  echo "stage all changes (git add) or stash the unstaged hunks, then retry." >&2
+  exit 1
+fi
+
+if [ "${#py_files[@]}" -gt 0 ]; then
+  if ! [ -x python/.venv/bin/ruff ]; then
+    echo "pre-commit: python/.venv/bin/ruff not found." >&2
+    echo "run 'cd python && python3 -m venv .venv && source .venv/bin/activate && pip install -e \".[dev]\"' first." >&2
+    exit 1
+  fi
+  export PATH="$PWD/python/.venv/bin:$PATH"
+  ruff format "${py_files[@]}"
+  ruff check --fix "${py_files[@]}"
+fi
+
+if [ "${#js_files[@]}" -gt 0 ]; then
+  npx --no-install eslint --fix "${js_files[@]}"
+fi
+
+touched=("${py_files[@]}" "${js_files[@]}")
+if [ "${#touched[@]}" -gt 0 ]; then
+  git add -- "${touched[@]}"
+fi

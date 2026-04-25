@@ -1,0 +1,95 @@
+name: Research
+description: Request investigation — spike, comparison, feasibility study, or prior-art scan.
+title: "[RESEARCH] "
+labels:
+  - Research
+assignees:
+  - Harrison-Blair
+body:
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story points
+      description: Fibonacci estimate. Leave blank or pick `?` if unsure.
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - "?"
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - CRITICAL
+        - HIGH
+        - MEDIUM
+        - LOW
+        - NONVITAL
+    validations:
+      required: false
+  - type: dropdown
+    id: research-type
+    attributes:
+      label: Research type
+      description: Category of investigation.
+      options:
+        - Spike
+        - Comparison
+        - Prior art
+        - Feasibility
+        - Prototype
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: proposed-research
+    attributes:
+      label: Proposed research
+      description: What is being investigated.
+    validations:
+      required: true
+  - type: textarea
+    id: importance
+    attributes:
+      label: Importance
+      description: Why this matters — what it unblocks, risks it reduces, or decisions it informs.
+    validations:
+      required: true
+  - type: textarea
+    id: research-goals
+    attributes:
+      label: Research goals
+      description: Questions to answer, decisions to make, or artifacts to produce. Uses checkbox markdown so goals can be ticked off as the research progresses.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: initial-thoughts
+    attributes:
+      label: Initial thoughts
+      description: Hypotheses, prior knowledge, or gut instincts. `None yet` is a fine answer.
+    validations:
+      required: false
+  - type: textarea
+    id: initial-resources
+    attributes:
+      label: Initial resources
+      description: Starting-point links — papers, blog posts, tools, libraries to try.
+    validations:
+      required: false
+  - type: textarea
+    id: related-documentation
+    attributes:
+      label: Related documentation
+      description: Internal project context — existing docs, issues, or PRs.
+    validations:
+      required: false
