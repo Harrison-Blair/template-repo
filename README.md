@@ -4,6 +4,7 @@
 This repository holds a bunch of different workflows, configuration files, scripts, and other useful things I find myself using on a frequent enough basis to genericize and put in the cloud.
 <!-- USER:END -->
 
+> [!WARNING]
 > **Disclaimer:** Everything below this line was generated or modified by AI via the [/update-readme](https://github.com/Harrison-Blair/template-repo/tree/main/.claude/skills/update-readme) skill.
 
 <!-- AI:START -->
