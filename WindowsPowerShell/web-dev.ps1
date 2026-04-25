@@ -11,6 +11,9 @@ Monitor 3 (right, vertical):
   - Firefox (top 1/2)    -> https://github.com
   - Firefox (bottom 1/2) -> iCloud, Gmail, Google Calendar (Calendar active)
 
+Background:
+  - Docker Desktop launched minimized (no positioning).
+
 Usage:
   powershell.exe -ExecutionPolicy Bypass -File .\web-dev.ps1
   (or pin a shortcut whose Target is the line above)
@@ -128,8 +131,13 @@ $VsCode = Find-First @(
     "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
     "$env:ProgramFiles\Microsoft VS Code\Code.exe"
 )
+$Docker = Find-First @(
+    "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
+    "${env:ProgramFiles(x86)}\Docker\Docker\Docker Desktop.exe"
+)
 if (-not $Firefox) { Write-Host "Firefox not found." -ForegroundColor Red; exit 1 }
 if (-not $VsCode)  { Write-Host "VS Code not found."  -ForegroundColor Red; exit 1 }
+if (-not $Docker)  { Write-Host "Docker Desktop not found." -ForegroundColor Yellow }
 if (-not (Get-Command wt.exe -ErrorAction SilentlyContinue)) {
     Write-Host "Windows Terminal (wt.exe) not found." -ForegroundColor Red; exit 1
 }
@@ -143,6 +151,17 @@ $ff3_h = [int]($M3.Height / 2)
 $ff3_y = $M3.Y + $ff3_h
 
 # ===== launch & place =====
+
+# Docker Desktop -> launch minimized (no positioning, just start it in the background)
+if ($Docker) {
+    Write-Host "Launching Docker Desktop (minimized)..."
+    $ex = [WinApi]::Find("Chrome_WidgetWin_1", "Docker Desktop")
+    Start-Process -FilePath $Docker -WindowStyle Minimized | Out-Null
+    $h = Wait-NewWindow "Chrome_WidgetWin_1" "Docker Desktop" $ex
+    if ($h -ne [IntPtr]::Zero) {
+        [WinApi]::ShowWindow($h, 7) | Out-Null   # SW_SHOWMINNOACTIVE
+    }
+}
 
 # Firefox -> Monitor 1, left 3/5
 Write-Host "Launching Firefox (localhost:3000)..."
