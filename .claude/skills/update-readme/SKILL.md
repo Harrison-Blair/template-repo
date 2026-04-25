@@ -35,13 +35,15 @@ The skill leans on bundled bash scripts so the main-session model spends tokens 
 
 2b. **Wrap legacy README (diff-and-confirm).** Show the user a concrete plan:
    - Existing content will be wrapped verbatim as the USER section (title + description preserved).
-   - An empty AI block will be appended below.
+   - An AI-disclaimer line and empty AI block will be appended below.
 
    Confirm explicitly before writing. After confirmation, rewrite `README.md` to:
    ```
    <!-- USER:START -->
    <existing content unchanged>
    <!-- USER:END -->
+
+   > **Disclaimer:** Everything below this line was generated or modified by AI via the [/update-readme](https://github.com/Harrison-Blair/template-repo/tree/main/.claude/skills/update-readme) skill.
 
    <!-- AI:START -->
    <!-- AI:END -->
