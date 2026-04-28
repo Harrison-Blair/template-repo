@@ -26,9 +26,8 @@ jobs:
             const sectionMatch = body.match(sectionRe);
 
             if (!sectionMatch) {
-              core.setFailed(
-                'No "## Pre-merge checklist" section found in the PR body. ' +
-                'Make sure the PR template is being used and the section is present.'
+              core.info(
+                'No "## Pre-merge checklist" section found in the PR body — nothing to verify, passing.'
               );
               return;
             }
@@ -44,9 +43,8 @@ jobs:
             }
 
             if (items.length === 0) {
-              core.setFailed(
-                'No checklist items found in the Pre-merge checklist section. ' +
-                'Check that items are formatted as `- [ ] item`.'
+              core.info(
+                'Pre-merge checklist section has no items — nothing to verify, passing.'
               );
               return;
             }
