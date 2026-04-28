@@ -1,0 +1,25 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+
+# Node / TS caches
+.eslintcache
+*.tsbuildinfo
+.npm/
+.yarn/cache/
+.parcel-cache/
+
+# Generic caches
+.cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Skill eval workspaces (generated test runs, fixtures, benchmarks)
+.claude/skills/*-workspace/
