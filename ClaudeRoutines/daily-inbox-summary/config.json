@@ -1,0 +1,53 @@
+{
+  "routine_id": "trig_012MCBDL3VYkmcztNSGYyqYg",
+  "manage_url": "https://claude.ai/code/routines/trig_012MCBDL3VYkmcztNSGYyqYg",
+  "name": "Daily Inbox Summary",
+  "schedule": {
+    "cron_expression": "0 14 * * 1-5",
+    "timezone_note": "Cron runs in UTC. 14:00 UTC = 9am EST (winter) / 10am EDT (summer). Mon-Fri only."
+  },
+  "enabled": true,
+  "job_config": {
+    "ccr": {
+      "environment_id": "env_016x1q3jYf56aGX4v7fgXpUo",
+      "environment_name": "Default (anthropic_cloud)",
+      "session_context": {
+        "model": "claude-sonnet-4-6",
+        "sources": [
+          {
+            "git_repository": {
+              "url": "https://github.com/Harrison-Blair/ai-reports"
+            }
+          }
+        ],
+        "allowed_tools": ["Bash", "Read", "Write", "Edit", "Glob", "Grep"]
+      },
+      "events": [
+        {
+          "data": {
+            "uuid": "<generate-fresh-v4-uuid-on-recreate>",
+            "session_id": "",
+            "type": "user",
+            "parent_tool_use_id": null,
+            "message": {
+              "role": "user",
+              "content_source": "prompt.md"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "mcp_connections": [
+    {
+      "connector_uuid": "42105fe5-a4f3-4e32-81cd-c7d714931bcf",
+      "name": "Microsoft-365",
+      "url": "https://microsoft365.mcp.claude.com/mcp"
+    }
+  ],
+  "notes": [
+    "The prompt is stored alongside this file as prompt.md. To recreate the routine via the RemoteTrigger API, inline prompt.md's contents at job_config.ccr.events[0].data.message.content and generate a fresh lowercase v4 UUID for events[0].data.uuid.",
+    "Microsoft 365 connector currently exposes read-only mail tools (outlook_email_search). No send-email step is in this routine — output lands in the ai-reports repo as a PR for review.",
+    "Created 2026-04-27."
+  ]
+}

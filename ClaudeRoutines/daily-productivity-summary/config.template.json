@@ -1,0 +1,60 @@
+{
+  "_kind": "routine_template",
+  "_description": "Reusable template. Each instance is a separate routine in Anthropic's cloud, identified by its source repo (the entry in `sources` that is not Harrison-Blair/ai-reports). Per-instance routine_id and manage_url are not stored locally — list them via the RemoteTrigger 'list' action or at https://claude.ai/code/routines.",
+  "_instantiation": [
+    "1. Replace <DISPLAY_NAME> with e.g. 'Daily Productivity Summary — <repo>'.",
+    "2. Replace <SOURCE_REPO_URL> with the full https github URL of the source repo.",
+    "3. Generate a fresh lowercase v4 UUID and put it at job_config.ccr.events[0].data.uuid.",
+    "4. Inline prompt.md verbatim into job_config.ccr.events[0].data.message.content; drop the content_source field.",
+    "5. Call RemoteTrigger {action:'create', body:<stamped body>}."
+  ],
+  "name": "<DISPLAY_NAME>",
+  "cron_expression": "0 4 * * *",
+  "schedule_note": "Daily at 04:00 UTC. No DST conversion needed (UTC-anchored).",
+  "enabled": true,
+  "job_config": {
+    "ccr": {
+      "environment_id": "env_016x1q3jYf56aGX4v7fgXpUo",
+      "environment_name": "Default (anthropic_cloud)",
+      "session_context": {
+        "model": "claude-opus-4-7",
+        "sources": [
+          {
+            "git_repository": {
+              "url": "https://github.com/Harrison-Blair/ai-reports"
+            }
+          },
+          {
+            "git_repository": {
+              "url": "<SOURCE_REPO_URL>"
+            }
+          }
+        ],
+        "allowed_tools": ["Bash", "Read", "Write", "Edit", "Glob", "Grep"]
+      },
+      "events": [
+        {
+          "data": {
+            "uuid": "<FRESH_LOWERCASE_V4_UUID>",
+            "session_id": "",
+            "type": "user",
+            "parent_tool_use_id": null,
+            "message": {
+              "role": "user",
+              "content_source": "prompt.md"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "mcp_connections": [],
+  "notes": [
+    "DESTINATION_REPO is invariant: always Harrison-Blair/ai-reports.",
+    "Listed first in `sources` so it's the primary working directory; the source repo is listed second to ensure the env's GitHub token (Claude app installation token) covers it.",
+    "Prompt is repo-agnostic — Step 0 discovers source vs destination by inspecting checked-out git remotes, so swapping the source URL is the only change between instances.",
+    "Source repo must have the Claude GitHub App installed if it is private (read scope sufficient).",
+    "Branch per instance: `ai-reports/<source-repo-name>/daily-summary`. Do not collapse to a shared branch — concurrent routines would race.",
+    "Recommend a manual first run via RemoteTrigger {action:'run'} after creation to verify auth scope and discovery against the actual cloud-env layout."
+  ]
+}
